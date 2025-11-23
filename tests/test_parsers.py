@@ -208,7 +208,7 @@ class TestArgumentParser:
 
         assert args.config_file == []
 
-    def test_parse_args_explicit_config_file(self, tmp_path: any, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_parse_args_explicit_config_file(self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test that explicit config file is validated."""
         config_file = tmp_path / "custom.ini"
         config_file.write_text("[bunenv]\n")

@@ -19,7 +19,7 @@ class TestConfig:
         assert bunenv.Config.ignore_ssl_certs is False
         assert bunenv.Config.mirror is None
 
-    def test_config_load_missing_file(self, tmp_path: any) -> None:
+    def test_config_load_missing_file(self, tmp_path: Any) -> None:
         """Test loading from non-existent config file."""
         fake_path = str(tmp_path / "nonexistent.ini")
         bunenv.Config._load([fake_path])
@@ -27,7 +27,7 @@ class TestConfig:
         # Should still have defaults
         assert bunenv.Config.bun == "latest"
 
-    def test_config_load_no_bunenv_section(self, tmp_path: any) -> None:
+    def test_config_load_no_bunenv_section(self, tmp_path: Any) -> None:
         """Test loading config file without [bunenv] section."""
         config_file = tmp_path / "config.ini"
         config_file.write_text("[other_section]\nkey = value\n")
@@ -37,7 +37,7 @@ class TestConfig:
         # Should still have defaults
         assert bunenv.Config.bun == "latest"
 
-    def test_config_load_bunenv_section(self, tmp_path: any) -> None:
+    def test_config_load_bunenv_section(self, tmp_path: Any) -> None:
         """Test loading config with [bunenv] section."""
         config_file = tmp_path / ".bunenvrc"
         config_file.write_text(
@@ -56,7 +56,7 @@ mirror = https://mirror.example.com
         assert bunenv.Config.github_token == "ghp_test123"
         assert bunenv.Config.mirror == "https://mirror.example.com"
 
-    def test_config_load_boolean_values(self, tmp_path: any) -> None:
+    def test_config_load_boolean_values(self, tmp_path: Any) -> None:
         """Test loading boolean config values."""
         config_file = tmp_path / ".bunenvrc"
         config_file.write_text(
@@ -71,7 +71,7 @@ ignore_ssl_certs = true
         assert bunenv.Config.prebuilt is False
         assert bunenv.Config.ignore_ssl_certs is True
 
-    def test_config_load_reverse_order(self, tmp_path: any) -> None:
+    def test_config_load_reverse_order(self, tmp_path: Any) -> None:
         """Test that config files are loaded in reverse order (later overrides earlier)."""
         config1 = tmp_path / "config1.ini"
         config1.write_text("[bunenv]\nbun = 1.0.0\n")
@@ -84,7 +84,7 @@ ignore_ssl_certs = true
 
         assert bunenv.Config.bun == "1.0.0"
 
-    def test_config_load_with_verbose(self, tmp_path: any, capsys: pytest.CaptureFixture) -> None:
+    def test_config_load_with_verbose(self, tmp_path: Any, capsys: pytest.CaptureFixture) -> None:
         """Test verbose output during config loading."""
         config_file = tmp_path / ".bunenvrc"
         config_file.write_text("[bunenv]\nbun = 1.0.0\n")
@@ -95,7 +95,7 @@ ignore_ssl_certs = true
         assert "CONFIG" in captured.out
         assert "bun = 1.0.0" in captured.out
 
-    def test_config_load_bun_version_file(self, tmp_path: any, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_config_load_bun_version_file(self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test loading version from .bun-version file."""
         monkeypatch.chdir(tmp_path)
 
@@ -106,7 +106,7 @@ ignore_ssl_certs = true
 
         assert bunenv.Config.bun == "1.3.7"
 
-    def test_config_load_bun_version_file_with_prefix(self, tmp_path: any, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_config_load_bun_version_file_with_prefix(self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test loading version from .bun-version file with 'v' or 'bun-v' prefix."""
         monkeypatch.chdir(tmp_path)
 
@@ -117,7 +117,7 @@ ignore_ssl_certs = true
 
         assert bunenv.Config.bun == "1.4.0"
 
-    def test_config_load_bun_version_file_missing(self, tmp_path: any, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_config_load_bun_version_file_missing(self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test that missing .bun-version file doesn't break config loading."""
         monkeypatch.chdir(tmp_path)
 
@@ -126,7 +126,7 @@ ignore_ssl_certs = true
         # Should still have default
         assert bunenv.Config.bun == "latest"
 
-    def test_config_load_expanduser(self, tmp_path: any, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_config_load_expanduser(self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test that ~ is expanded in config file paths."""
         config_file = tmp_path / ".bunenvrc"
         config_file.write_text("[bunenv]\nbun = 1.0.0\n")
@@ -160,7 +160,7 @@ ignore_ssl_certs = true
         assert "variant" in bunenv.Config._default
         assert bunenv.Config._default["bun"] == "latest"
 
-    def test_config_ignores_private_attributes(self, tmp_path: any) -> None:
+    def test_config_ignores_private_attributes(self, tmp_path: Any) -> None:
         """Test that private attributes (starting with _) are not loaded from config."""
         config_file = tmp_path / ".bunenvrc"
         config_file.write_text(
