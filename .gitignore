@@ -74,5 +74,4 @@ docs/_templates/
 
 # uv
 .uv/
-uv.lock
 nodeenv/
