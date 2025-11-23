@@ -154,11 +154,16 @@ def remove_env_bin_from_path(env: str, env_bin_dir: str) -> str:
 
 def parse_version(version_str: str) -> Tuple[int, ...]:
     """Parse version string to a tuple of integer parts"""
-    v = version_str.replace("v", "").replace("bun-v", "").split(".")[:3]
-    # remove all after '+' in the PATCH part of the version
-    if len(v) >= 3:
-        v[2] = v[2].split("+")[0]
-    return tuple(map(int, v))
+    try:
+        # Remove prefixes in correct order (longest first)
+        v = version_str.replace("bun-v", "").replace("v", "").split(".")[:3]
+        # remove all after '+' in the PATCH part of the version
+        if len(v) >= 3:
+            v[2] = v[2].split("+")[0]
+        return tuple(map(int, v))
+    except ValueError:
+        # Return empty tuple if version string is invalid
+        return ()
 
 
 def bun_version_from_args(args: argparse.Namespace) -> Tuple[int, ...]:
