@@ -31,7 +31,7 @@ jobs:
           enable-cache: true
 
       - name: Install bunenv
-        run: uv pip install -e .
+        run: uv pip install -e . --system
 
       - name: Test bunenv --version
         run: uv run bunenv --version
@@ -62,7 +62,7 @@ jobs:
           enable-cache: true
 
       - name: Install bunenv
-        run: uv pip install -e .
+        run: uv pip install -e . --system
 
       - name: Create test environment with latest Bun
         run: |
