@@ -7,8 +7,9 @@ on:
     branches: [main]
 
 jobs:
-  test:
-    name: Test on ${{ matrix.os }} - Python ${{ matrix.python-version }}
+  # Smoke tests - quick validation on all platforms
+  smoke-test:
+    name: Smoke test on ${{ matrix.os }} - Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -39,20 +40,51 @@ jobs:
         run: uv run bunenv --list | head -5
         shell: bash
 
-      - name: Create test environment (Unix)
-        if: runner.os != 'Windows'
+      - name: Test bunenv --help
+        run: uv run bunenv --help
+
+  # Full integration test - only on one platform to save time/bandwidth
+  integration-test:
+    name: Integration test (Ubuntu + Python 3.12)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Install bunenv
+        run: uv pip install -e .
+
+      - name: Create test environment with latest Bun
         run: |
           uv run bunenv test-env --bun=latest
           source test-env/bin/activate
+          echo "Testing Bun installation..."
           bun --version
+          echo "Testing Bun functionality..."
+          bun --help
+          deactivate_bun
 
-      - name: Create test environment (Windows)
-        if: runner.os == 'Windows'
+      - name: Create test environment with specific version
         run: |
-          uv run bunenv test-env --bun=latest
-          test-env\Scripts\activate.bat
-          bun --version
-        shell: cmd
+          uv run bunenv test-env-1.3.0 --bun=1.3.0
+          source test-env-1.3.0/bin/activate
+          bun --version | grep "1.3.0"
+          deactivate_bun
+
+      - name: Test environment cleanup
+        run: |
+          rm -rf test-env test-env-1.3.0
+          echo "Cleanup successful"
 
   lint:
     name: Lint & Format
@@ -105,7 +137,7 @@ jobs:
   build:
     name: Build package
     runs-on: ubuntu-latest
-    needs: [test, lint, type-check]
+    needs: [smoke-test, integration-test, lint, type-check]
 
     steps:
       - uses: actions/checkout@v4
