@@ -5,7 +5,6 @@
 Bun.js virtual environment
 
 Adapted from nodeenv by Eugene Kalinin
-:copyright: (c) 2024 Jacob Coffee
 :license: BSD, see LICENSE for more details.
 
 Original nodeenv: https://github.com/ekalinin/nodeenv
