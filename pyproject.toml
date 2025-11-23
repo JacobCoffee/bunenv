@@ -1,0 +1,56 @@
+[project]
+name = "bunenv"
+version = "0.1.0"
+description = "Bun virtual environment builder"
+readme = "README.md"
+authors = [
+    { name = "Jacob Coffee", email = "jacob@z7x.org" }
+]
+requires-python = ">=3.8"
+dependencies = []
+license = { text = "BSD-3-Clause" }
+keywords = ["bun", "environment", "virtual", "isolated"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Installation/Setup",
+]
+
+[project.urls]
+Homepage = "https://github.com/JacobCoffee/bunenv"
+Repository = "https://github.com/JacobCoffee/bunenv"
+Issues = "https://github.com/JacobCoffee/bunenv/issues"
+Changelog = "https://github.com/JacobCoffee/bunenv/releases"
+
+[project.scripts]
+bunenv = "bunenv:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/bunenv"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/README.md",
+    "/LICENSE",
+]
