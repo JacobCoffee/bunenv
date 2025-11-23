@@ -243,6 +243,7 @@ class TestMkdir:
 class TestMakeExecutable:
     """Tests for make_executable function."""
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Unix permissions not applicable on Windows")
     def test_make_executable(self, tmp_path: Any) -> None:
         """Test making a file executable."""
         test_file = tmp_path / "test_script.sh"
@@ -255,6 +256,7 @@ class TestMakeExecutable:
         assert st.st_mode & stat.S_IXGRP
         assert st.st_mode & stat.S_IXOTH
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Unix permissions not applicable on Windows")
     def test_make_executable_permissions(self, tmp_path: Any) -> None:
         """Test that make_executable sets 0755 permissions."""
         test_file = tmp_path / "script"
@@ -283,6 +285,7 @@ class TestWritefile:
         with open(dest) as f:
             assert f.read() == content
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Unix permissions not applicable on Windows")
     def test_writefile_makes_executable(self, tmp_path: Any) -> None:
         """Test that writefile makes file executable."""
         dest = str(tmp_path / "script.sh")
