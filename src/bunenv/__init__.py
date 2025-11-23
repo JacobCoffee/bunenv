@@ -26,44 +26,45 @@ import subprocess
 import sys
 import sysconfig
 import zipfile
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
 
 try:  # pragma: no cover (py2 only)
     # noinspection PyCompatibility
-    import urllib2
-    from ConfigParser import SafeConfigParser as ConfigParser
+    import urllib2  # type: ignore[import-not-found]
+    from ConfigParser import SafeConfigParser as ConfigParser  # type: ignore[import-not-found]
 
     iteritems = operator.methodcaller("iteritems")
-    import httplib
+    import httplib  # type: ignore[import-not-found]
 
-    IncompleteRead = httplib.IncompleteRead
+    IncompleteRead = httplib.IncompleteRead  # type: ignore[name-defined]
 except ImportError:  # pragma: no cover (py3 only)
     # noinspection PyUnresolvedReferences
-    import urllib.request as urllib2
+    import urllib.request as urllib2  # type: ignore[no-redef]
     from configparser import ConfigParser
 
     iteritems = operator.methodcaller("items")
-    import http
+    import http.client  # type: ignore[no-redef]
 
-    IncompleteRead = http.client.IncompleteRead
+    IncompleteRead = http.client.IncompleteRead  # type: ignore[misc]
 
-bunenv_version = "0.1.0"
+bunenv_version: str = "0.1.0"
 
-join = os.path.join
-abspath = os.path.abspath
-src_base_url = None  # Will be set to GitHub API base
+join: Callable[..., str] = os.path.join
+abspath: Callable[[str], str] = os.path.abspath
+src_base_url: Optional[str] = None  # Will be set to GitHub API base
 
-is_PY3 = sys.version_info[0] >= 3
-is_WIN = platform.system() == "Windows"
-is_CYGWIN = platform.system().startswith(("CYGWIN", "MSYS"))
+is_PY3: bool = sys.version_info[0] >= 3
+is_WIN: bool = platform.system() == "Windows"
+is_CYGWIN: bool = platform.system().startswith(("CYGWIN", "MSYS"))
 
-ignore_ssl_certs = False
+ignore_ssl_certs: bool = False
 
 # ---------------------------------------------------------
 # Utils
 
 
 # https://github.com/jhermann/waif/blob/master/python/to_uft8.py
-def to_utf8(text):
+def to_utf8(text: Any) -> Any:
     """Convert given text to UTF-8 encoding (as far as possible)."""
     if not text or is_PY3:
         return text
@@ -87,15 +88,15 @@ class Config:
     """Configuration namespace."""
 
     # Defaults
-    bun = "latest"
-    variant = ""  # baseline, profile, musl
-    github_token = None  # For GitHub API rate limits
-    prebuilt = True  # Always true for Bun (no source builds)
-    ignore_ssl_certs = False
-    mirror = None  # For GitHub mirrors if needed
+    bun: str = "latest"
+    variant: str = ""  # baseline, profile, musl
+    github_token: Optional[str] = None  # For GitHub API rate limits
+    prebuilt: bool = True  # Always true for Bun (no source builds)
+    ignore_ssl_certs: bool = False
+    mirror: Optional[str] = None  # For GitHub mirrors if needed
 
     @classmethod
-    def _load(cls, configfiles, verbose=False):
+    def _load(cls, configfiles: List[str], verbose: bool = False) -> None:
         """Load configuration from the given files in reverse order,
         if they exist and have a [bunenv] section.
         Additionally, load version from .bun-version if file exists.
@@ -130,7 +131,7 @@ class Config:
                 cls.bun = v_file.readline().strip().lstrip("v").lstrip("bun-v")
 
     @classmethod
-    def _dump(cls):
+    def _dump(cls) -> None:
         """Print defaults for the README."""
         print("    [bunenv]")
         print(
@@ -138,20 +139,20 @@ class Config:
         )
 
 
-Config._default = dict((attr, val) for attr, val in iteritems(vars(Config)) if not attr.startswith("_"))
+Config._default: Dict[str, Any] = dict((attr, val) for attr, val in iteritems(vars(Config)) if not attr.startswith("_"))
 
 
-def clear_output(out):
+def clear_output(out: bytes) -> str:
     """Remove new-lines and decode"""
     return out.decode("utf-8").replace("\n", "")
 
 
-def remove_env_bin_from_path(env, env_bin_dir):
+def remove_env_bin_from_path(env: str, env_bin_dir: str) -> str:
     """Remove bin directory of the current environment from PATH"""
     return env.replace(env_bin_dir + ":", "")
 
 
-def parse_version(version_str):
+def parse_version(version_str: str) -> Tuple[int, ...]:
     """Parse version string to a tuple of integer parts"""
     v = version_str.replace("v", "").replace("bun-v", "").split(".")[:3]
     # remove all after '+' in the PATCH part of the version
@@ -160,7 +161,7 @@ def parse_version(version_str):
     return tuple(map(int, v))
 
 
-def bun_version_from_args(args):
+def bun_version_from_args(args: argparse.Namespace) -> Tuple[int, ...]:
     """Parse the bun version from the argparse args"""
     if args.bun == "system":
         out, err = subprocess.Popen(["bun", "--version"], stdout=subprocess.PIPE).communicate()
@@ -169,20 +170,20 @@ def bun_version_from_args(args):
     return parse_version(args.bun)
 
 
-def create_logger():
+def create_logger() -> logging.Logger:
     """Create logger for diagnostic"""
     # create logger
     loggr = logging.getLogger("bunenv")
     loggr.setLevel(logging.INFO)
 
     # monkey patch
-    def emit(self, record):
+    def emit(self: logging.StreamHandler, record: logging.LogRecord) -> None:
         msg = self.format(record)
         fs = "%s" if getattr(record, "continued", False) else "%s\n"
         self.stream.write(fs % to_utf8(msg))
         self.flush()
 
-    logging.StreamHandler.emit = emit
+    logging.StreamHandler.emit = emit  # type: ignore[assignment]
 
     # create console handler and set level to debug
     ch = logging.StreamHandler()
@@ -199,10 +200,10 @@ def create_logger():
     return loggr
 
 
-logger = create_logger()
+logger: logging.Logger = create_logger()
 
 
-def make_parser():
+def make_parser() -> argparse.ArgumentParser:
     """Make a command line argument parser."""
     parser = argparse.ArgumentParser(usage="%(prog)s [OPTIONS] DEST_DIR")
 
@@ -324,7 +325,7 @@ def make_parser():
     return parser
 
 
-def parse_args(check=True):
+def parse_args(check: bool = True) -> argparse.Namespace:
     """Parses command line arguments.
 
     Set `check` to False to skip validation checks.
@@ -352,7 +353,7 @@ def parse_args(check=True):
     return args
 
 
-def mkdir(path):
+def mkdir(path: str) -> None:
     """Create directory"""
     if not os.path.exists(path):
         logger.debug(" * Creating: %s ... ", path, extra=dict(continued=True))
@@ -362,13 +363,13 @@ def mkdir(path):
         logger.debug(" * Directory %s already exists", path)
 
 
-def make_executable(filename):
+def make_executable(filename: str) -> None:
     mode_0755 = stat.S_IRWXU | stat.S_IXGRP | stat.S_IRGRP | stat.S_IROTH | stat.S_IXOTH
     os.chmod(filename, mode_0755)
 
 
 # noinspection PyArgumentList
-def writefile(dest, content, overwrite=True, append=False):
+def writefile(dest: str, content: Union[str, bytes], overwrite: bool = True, append: bool = False) -> None:
     """Create file and write content in it"""
     content = to_utf8(content)
     if is_PY3 and not isinstance(content, bytes):
@@ -401,12 +402,18 @@ def writefile(dest, content, overwrite=True, append=False):
         f.write(content)
 
 
-def callit(cmd, show_stdout=True, in_shell=False, cwd=None, extra_env=None):
+def callit(
+    cmd: Union[List[str], str],
+    show_stdout: bool = True,
+    in_shell: bool = False,
+    cwd: Optional[str] = None,
+    extra_env: Optional[Dict[str, str]] = None,
+) -> Tuple[int, List[str]]:
     """Execute cmd line in sub-shell"""
-    all_output = []
-    cmd_parts = []
+    all_output: List[str] = []
+    cmd_parts: List[str] = []
 
-    for part in cmd:
+    for part in cmd:  # type: ignore[union-attr]
         if len(part) > 45:
             part = part[:20] + "..." + part[-20:]
         if " " in part or "\n" in part or '"' in part or "'" in part:
@@ -416,18 +423,17 @@ def callit(cmd, show_stdout=True, in_shell=False, cwd=None, extra_env=None):
     logger.debug(" ** Running command %s" % cmd_desc)
 
     if in_shell:
-        cmd = " ".join(cmd)
+        cmd = " ".join(cmd)  # type: ignore[arg-type]
 
     # output
     stdout = subprocess.PIPE
 
     # env
+    env: Optional[Dict[str, str]] = None
     if extra_env:
         env = os.environ.copy()
         if extra_env:
             env.update(extra_env)
-    else:
-        env = None
 
     # execute
     try:
@@ -439,18 +445,19 @@ def callit(cmd, show_stdout=True, in_shell=False, cwd=None, extra_env=None):
         logger.error("Error %s while executing command %s" % (e, cmd_desc))
         raise
 
-    stdout = proc.stdout
-    while stdout:
-        line = stdout.readline()
-        if not line:
+    stdout_stream = proc.stdout
+    while stdout_stream:
+        line_bytes = stdout_stream.readline()
+        if not line_bytes:
             break
+        line: str
         try:
             if is_WIN:
-                line = line.decode("mbcs").rstrip()
+                line = line_bytes.decode("mbcs").rstrip()
             else:
-                line = line.decode("utf8").rstrip()
+                line = line_bytes.decode("utf8").rstrip()
         except UnicodeDecodeError:
-            line = line.decode("cp866").rstrip()
+            line = line_bytes.decode("cp866").rstrip()
         all_output.append(line)
         if show_stdout:
             logger.info(line)
@@ -466,18 +473,18 @@ def callit(cmd, show_stdout=True, in_shell=False, cwd=None, extra_env=None):
     return proc.returncode, all_output
 
 
-def is_x86_64_musl():
+def is_x86_64_musl() -> bool:
     """Check if running on musl libc"""
     return sysconfig.get_config_var("HOST_GNU_TYPE") == "x86_64-pc-linux-musl"
 
 
-def get_bun_bin_url(version, variant="", mirror=None):
+def get_bun_bin_url(version: str, variant: str = "", mirror: Optional[str] = None) -> str:
     """Construct GitHub releases URL for Bun binary
 
     Bun provides prebuilt binaries for multiple platforms in the format:
     bun-{platform}-{arch}[-{variant}].zip
     """
-    archmap = {
+    archmap: Dict[str, str] = {
         "x86_64": "x64",
         "amd64": "x64",
         "AMD64": "x64",
@@ -486,7 +493,7 @@ def get_bun_bin_url(version, variant="", mirror=None):
         "aarch64": "aarch64",
     }
 
-    sysmap = {
+    sysmap: Dict[str, str] = {
         "Darwin": "darwin",
         "Linux": "linux",
         "Windows": "windows",
@@ -510,7 +517,7 @@ def get_bun_bin_url(version, variant="", mirror=None):
 
 
 @contextlib.contextmanager
-def zipfile_open(*args, **kwargs):
+def zipfile_open(*args: Any, **kwargs: Any) -> Iterator[zipfile.ZipFile]:
     """Context manager for zipfile."""
     zf = zipfile.ZipFile(*args, **kwargs)
     try:
@@ -519,7 +526,7 @@ def zipfile_open(*args, **kwargs):
         zf.close()
 
 
-def _download_bun_file(bun_url, n_attempt=3):
+def _download_bun_file(bun_url: str, n_attempt: int = 3) -> io.BytesIO:
     """Do multiple attempts to avoid incomplete data in case
     of unstable network
     """
@@ -531,9 +538,11 @@ def _download_bun_file(bun_url, n_attempt=3):
             n_attempt -= 1
             if n_attempt == 0:
                 raise e
+    # This should never be reached, but makes type checker happy
+    raise RuntimeError("Failed to download file")
 
 
-def download_bun_bin(bun_url, src_dir, args):
+def download_bun_bin(bun_url: str, src_dir: str, args: argparse.Namespace) -> None:
     """Download Bun binary zip file"""
     logger.info(".", extra=dict(continued=True))
     dl_contents = _download_bun_file(bun_url)
@@ -543,9 +552,9 @@ def download_bun_bin(bun_url, src_dir, args):
         archive.extractall(src_dir)
 
 
-def urlopen(url):
+def urlopen(url: str) -> Any:
     home_url = "https://github.com/JacobCoffee/bunenv/"
-    headers = {"User-Agent": "bunenv/%s (%s)" % (bunenv_version, home_url)}
+    headers: Dict[str, str] = {"User-Agent": "bunenv/%s (%s)" % (bunenv_version, home_url)}
 
     # Add GitHub token if provided
     if Config.github_token:
@@ -563,7 +572,7 @@ def urlopen(url):
 # Virtual environment functions
 
 
-def copy_bun_from_prebuilt(env_dir, src_dir, bun_version):
+def copy_bun_from_prebuilt(env_dir: str, src_dir: str, bun_version: str) -> None:
     """Copy prebuilt Bun binary into environment
 
     Bun zip structure: bun-{platform}-{arch}/bun (or bun.exe on Windows)
@@ -606,7 +615,7 @@ def copy_bun_from_prebuilt(env_dir, src_dir, bun_version):
     logger.info(".", extra=dict(continued=True))
 
 
-def install_bun(env_dir, src_dir, args):
+def install_bun(env_dir: str, src_dir: str, args: argparse.Namespace) -> None:
     """Download Bun binary and install it in virtual environment.
     Bun only provides prebuilt binaries (no source builds).
     """
@@ -618,7 +627,7 @@ def install_bun(env_dir, src_dir, args):
         raise
 
 
-def install_bun_wrapped(env_dir, src_dir, args):
+def install_bun_wrapped(env_dir: str, src_dir: str, args: argparse.Namespace) -> None:
     env_dir = abspath(env_dir)
 
     logger.info(" * Install prebuilt Bun (%s) " % args.bun, extra=dict(continued=True))
@@ -640,7 +649,7 @@ def install_bun_wrapped(env_dir, src_dir, args):
     logger.info(" done.")
 
 
-def install_packages(env_dir, args):
+def install_packages(env_dir: str, args: argparse.Namespace) -> None:
     """Install packages via bun add -g"""
     if not args.requirements:
         return
@@ -660,10 +669,14 @@ def install_packages(env_dir, args):
     logger.info("done.")
 
 
-def install_activate(env_dir, args):
+def install_activate(env_dir: str, args: argparse.Namespace) -> None:
     """Install virtual environment activation script"""
     if is_WIN:
-        files = {"activate.bat": ACTIVATE_BAT, "deactivate.bat": DEACTIVATE_BAT, "Activate.ps1": ACTIVATE_PS1}
+        files: Dict[str, str] = {
+            "activate.bat": ACTIVATE_BAT,
+            "deactivate.bat": DEACTIVATE_BAT,
+            "Activate.ps1": ACTIVATE_PS1,
+        }
         bin_dir = join(env_dir, "Scripts")
         shim_bun = join(bin_dir, "bun.exe")
     else:
@@ -680,7 +693,7 @@ def install_activate(env_dir, args):
     prompt = args.prompt or "(%s)" % os.path.basename(os.path.abspath(env_dir))
 
     if args.bun == "system":
-        env = os.environ.copy()
+        env: Dict[str, str] = os.environ.copy()
         env.update({"PATH": remove_env_bin_from_path(env["PATH"], bin_dir)})
         which_bun_output, _ = subprocess.Popen(["which", "bun"], stdout=subprocess.PIPE, env=env).communicate()
         shim_bun = clear_output(which_bun_output)
@@ -707,13 +720,13 @@ def install_activate(env_dir, args):
         writefile(file_path, content, append=need_append)
 
 
-def set_predeactivate_hook(env_dir):
+def set_predeactivate_hook(env_dir: str) -> None:
     if not is_WIN:
         with open(join(env_dir, "bin", "predeactivate"), "a") as hook:
             hook.write(PREDEACTIVATE_SH)
 
 
-def create_environment(env_dir, args):
+def create_environment(env_dir: str, args: argparse.Namespace) -> None:
     """Creates a new Bun environment in ``env_dir``."""
     if os.path.exists(env_dir) and not args.python_virtualenv:
         logger.info(" * Environment already exists: %s", env_dir)
@@ -745,9 +758,9 @@ def create_environment(env_dir, args):
         shutil.rmtree(src_dir)
 
 
-def _get_versions_json():
+def _get_versions_json() -> List[Dict[str, Any]]:
     """Fetch Bun versions from GitHub Releases API"""
-    headers = {}
+    headers: Dict[str, str] = {}
     if Config.github_token:
         headers["Authorization"] = f"token {Config.github_token}"
 
@@ -776,12 +789,12 @@ def _get_versions_json():
     ]
 
 
-def get_bun_versions():
+def get_bun_versions() -> List[str]:
     """Return all available Bun versions"""
     return [dct["version"] for dct in _get_versions_json()]
 
 
-def print_bun_versions():
+def print_bun_versions() -> None:
     """Prints into stdout all available Bun versions"""
     versions = get_bun_versions()
     chunks_of_8 = [versions[pos : pos + 8] for pos in range(0, len(versions), 8)]
@@ -789,7 +802,7 @@ def print_bun_versions():
         logger.info("\t".join(chunk))
 
 
-def get_last_stable_bun_version():
+def get_last_stable_bun_version() -> Optional[str]:
     """Return last stable Bun version (first in the list from GitHub)"""
     versions = get_bun_versions()
     if versions:
@@ -797,7 +810,7 @@ def get_last_stable_bun_version():
     return None
 
 
-def get_env_dir(args):
+def get_env_dir(args: argparse.Namespace) -> Any:
     if args.python_virtualenv:
         if (
             hasattr(sys, "real_prefix")
@@ -814,7 +827,7 @@ def get_env_dir(args):
 
 
 # noinspection PyProtectedMember
-def main():
+def main() -> None:
     """Entry point"""
     # quick&dirty way to help update the README
     if "--dump-config-defaults" in sys.argv:
@@ -858,7 +871,7 @@ def main():
 # ---------------------------------------------------------
 # Shell scripts content
 
-DISABLE_PROMPT = {
+DISABLE_PROMPT: Dict[str, str] = {
     "activate": """
 # disable bunenv's prompt
 # (prompt already changed by original virtualenv's script)
@@ -871,7 +884,7 @@ set BUN_VIRTUAL_ENV_DISABLE_PROMPT 1
 """,
 }
 
-ENABLE_PROMPT = {
+ENABLE_PROMPT: Dict[str, str] = {
     "activate": """
 unset BUN_VIRTUAL_ENV_DISABLE_PROMPT
 """,
@@ -880,13 +893,13 @@ set -e BUN_VIRTUAL_ENV_DISABLE_PROMPT
 """,
 }
 
-SHIM = """#!/usr/bin/env bash
+SHIM: str = """#!/usr/bin/env bash
 export BUN_INSTALL='__BUN_VIRTUAL_ENV__'
 export BUN_INSTALL_BIN='__BUN_VIRTUAL_ENV__/__BIN_NAME__'
 exec '__SHIM_BUN__' "$@"
 """
 
-ACTIVATE_BAT = r"""
+ACTIVATE_BAT: str = r"""
 @echo off
 set "BUN_VIRTUAL_ENV=__BUN_VIRTUAL_ENV__"
 if not defined PROMPT (
@@ -914,7 +927,7 @@ set "PATH=%BUN_VIRTUAL_ENV%\Scripts;%PATH%"
 
 """
 
-DEACTIVATE_BAT = """\
+DEACTIVATE_BAT: str = """\
 @echo off
 if defined _OLD_VIRTUAL_PROMPT (
     set "PROMPT=%_OLD_VIRTUAL_PROMPT%"
@@ -932,7 +945,7 @@ set BUN_VIRTUAL_ENV=
 :END
 """
 
-ACTIVATE_PS1 = r"""
+ACTIVATE_PS1: str = r"""
 function global:deactivate ([switch]$NonDestructive) {
     # Revert to original values
     if (Test-Path function:_OLD_VIRTUAL_PROMPT) {
@@ -979,7 +992,7 @@ copy-item env:PATH env:_OLD_VIRTUAL_PATH
 $env:PATH = "$env:BUN_VIRTUAL_ENV\Scripts;$env:PATH"
 """
 
-ACTIVATE_SH = r"""
+ACTIVATE_SH: str = r"""
 
 # This file must be used with "source bin/activate" *from bash*
 # you cannot run it directly
@@ -1078,7 +1091,7 @@ fi
 """
 
 
-ACTIVATE_FISH = """
+ACTIVATE_FISH: str = """
 
 # This file must be used with "source bin/activate.fish" *from fish*
 # you cannot run it directly
@@ -1180,7 +1193,7 @@ if test -z "$BUN_VIRTUAL_ENV_DISABLE_PROMPT"
 end
 """
 
-PREDEACTIVATE_SH = """
+PREDEACTIVATE_SH: str = """
 if type -p deactivate_bun > /dev/null; then deactivate_bun;fi
 """
 
