@@ -191,6 +191,7 @@ class TestEndToEndWorkflows:
 
         bunenv.create_environment(str(env_dir), args)
 
+        assert download_url is not None
         assert "musl" in download_url
 
     def test_environment_with_requirements(

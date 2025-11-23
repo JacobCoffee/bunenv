@@ -1,6 +1,7 @@
 """Tests for argument parsing functions."""
 
 import sys
+from typing import Any, cast
 
 import pytest
 
@@ -23,7 +24,7 @@ class TestArgumentParser:
         with pytest.raises(SystemExit) as exc_info:
             bunenv.make_parser().parse_args()
 
-        assert exc_info.value.code == 0
+        assert cast(SystemExit, exc_info.value).code == 0
 
     def test_parser_bun_argument(self) -> None:
         """Test --bun argument parsing."""

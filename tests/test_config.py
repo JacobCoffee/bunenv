@@ -1,6 +1,7 @@
 """Tests for Config class and configuration loading."""
 
 import os
+from typing import Any
 
 import pytest
 

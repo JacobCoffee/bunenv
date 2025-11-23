@@ -679,6 +679,7 @@ class TestUrlopen:
 
         bunenv.urlopen("https://api.github.com")
 
+        assert headers_used is not None
         assert "Authorization" in headers_used
         assert headers_used["Authorization"] == "token test_token"
 

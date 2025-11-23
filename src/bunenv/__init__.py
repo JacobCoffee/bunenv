@@ -87,6 +87,9 @@ def to_utf8(text: Any) -> Any:
 class Config:
     """Configuration namespace."""
 
+    # Class attribute for defaults (set at module level)
+    _default: Dict[str, Any]
+
     # Defaults
     bun: str = "latest"
     variant: str = ""  # baseline, profile, musl

@@ -4,6 +4,7 @@ import argparse
 import io
 import os
 import zipfile
+from email.message import Message
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -345,7 +346,7 @@ class TestInstallBun:
         import urllib.request
 
         def fake_download(url: str, src_dir: str, args: Any) -> None:
-            raise urllib.request.HTTPError(url, 404, "Not Found", {}, None)
+            raise urllib.request.HTTPError(url, 404, "Not Found", Message(), None)
 
         monkeypatch.setattr(bunenv, "download_bun_bin", fake_download)
 
