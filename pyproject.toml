@@ -50,3 +50,51 @@ name = "testpypi"
 url = "https://test.pypi.org/simple/"
 publish-url = "https://test.pypi.org/legacy/"
 explicit = true
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.6",
+    "ty>=0.0.1a26",
+    "prek>=0.2.18",
+    "pytest>=7.4.3",
+    "pytest-cov>=4.1.0",
+    "codespell>=2.2.6",
+    "pytest-sugar>=1.1.1",
+]
+
+[tool.ruff]
+line-length = 120
+src = ["src"]
+target-version = "py38"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]  # Errors, pyflakes, warnings, isort
+ignore = [
+    "E501",     # Line too long (handled by formatter)
+    "COM812",   # Missing trailing comma (conflicts with formatter)
+    "ISC001",   # Implicit string concatenation (conflicts with formatter)
+]
+# Note: Code adapted from nodeenv - keeping original style mostly intact
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.mccabe]
+max-complexity = 15
+
+[tool.ty]
+
+[tool.ty.environment]
+python = ".venv"
+
+[tool.ty.src]
+exclude = []
+
+[tool.codespell]
+quiet-level = 3
+ignore-words-list = "selectin, alog"
+skip = "uv.lock, dist, build"
