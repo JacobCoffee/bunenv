@@ -37,7 +37,7 @@ jobs:
         run: uv run bunenv --version
 
       - name: Test bunenv --list
-        run: uv run bunenv --list | head -5
+        run: uv run bunenv --list --github-token="${{ secrets.GITHUB_TOKEN }}" | head -5
         shell: bash
 
       - name: Test bunenv --help
