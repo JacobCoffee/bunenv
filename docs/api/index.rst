@@ -3,6 +3,12 @@ API Reference
 
 Complete technical reference for the bunenv module.
 
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+
+   cli
+
 .. note::
    Looking for command-line options? See :doc:`cli`.
 
