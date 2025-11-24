@@ -21,7 +21,6 @@ Prerequisites
 Just two things:
 
 - **Python 3.10+** (check with ``python --version``)
-- **Internet connection** (to download Bun)
 
 No Bun installation needed - bunenv handles that for you!
 
