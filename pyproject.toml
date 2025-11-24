@@ -61,6 +61,14 @@ dev = [
     "codespell>=2.2.6",
     "pytest-sugar>=1.1.1",
 ]
+docs = [
+    "sphinx>=7.0.0",
+    "sphinx-rtd-theme>=2.0.0",
+    "sphinx-autodoc-typehints>=1.25.0",
+    "sphinx-copybutton>=0.5.2",
+    "sphinx-design>=0.5.0",
+    "myst-parser>=2.0.0",
+]
 
 [tool.ruff]
 line-length = 120
