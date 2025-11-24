@@ -76,3 +76,4 @@ docs/source/api/generated/
 # uv
 .uv/
 nodeenv/
+test-env/
