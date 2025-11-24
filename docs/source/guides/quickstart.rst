@@ -29,30 +29,31 @@ Step 1: Install bunenv
 
 Choose your preferred method:
 
-Using pip
-~~~~~~~~~
+.. tabs::
 
-.. code-block:: bash
+   .. tab:: pip
 
-   pip install bunenv
+      .. code-block:: bash
 
-Using uv (Faster)
-~~~~~~~~~~~~~~~~~
+         pip install bunenv
 
-If you have `uv <https://github.com/astral-sh/uv>`_ installed:
+      Standard installation using pip.
 
-.. code-block:: bash
+   .. tab:: uv
 
-   uv tool install bunenv
+      .. code-block:: bash
 
-Using pipx (Isolated)
-~~~~~~~~~~~~~~~~~~~~~
+         uv tool install bunenv
 
-For a completely isolated bunenv installation:
+      Faster installation using `uv <https://github.com/astral-sh/uv>`_.
 
-.. code-block:: bash
+   .. tab:: pipx
 
-   pipx install bunenv
+      .. code-block:: bash
+
+         pipx install bunenv
+
+      Completely isolated bunenv installation.
 
 Verify Installation
 ~~~~~~~~~~~~~~~~~~~
@@ -118,33 +119,35 @@ Step 3: Activate the Environment
 
 Time to activate! The command varies by platform:
 
-macOS / Linux (bash/zsh)
-~~~~~~~~~~~~~~~~~~~~~~~~
+.. tabs::
 
-.. code-block:: bash
+   .. group-tab:: macOS/Linux
 
-   source my-first-env/bin/activate
+      .. code-block:: bash
 
-macOS / Linux (fish)
-~~~~~~~~~~~~~~~~~~~~
+         # bash/zsh
+         source my-first-env/bin/activate
 
-.. code-block:: bash
+      Or for fish shell:
 
-   source my-first-env/bin/activate.fish
+      .. code-block:: bash
 
-Windows (PowerShell)
-~~~~~~~~~~~~~~~~~~~~
+         # fish
+         source my-first-env/bin/activate.fish
 
-.. code-block:: powershell
+   .. group-tab:: Windows
 
-   my-first-env\Scripts\Activate.ps1
+      .. code-block:: powershell
 
-Windows (cmd.exe)
-~~~~~~~~~~~~~~~~~
+         # PowerShell
+         my-first-env\Scripts\Activate.ps1
 
-.. code-block:: bat
+      Or for cmd.exe:
 
-   my-first-env\Scripts\activate.bat
+      .. code-block:: bat
+
+         REM cmd.exe
+         my-first-env\Scripts\activate.bat
 
 What Changed?
 ~~~~~~~~~~~~~

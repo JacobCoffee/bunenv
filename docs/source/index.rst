@@ -39,24 +39,62 @@ Quick Start: 60 Seconds to Your First Environment
 
 Install bunenv:
 
-.. code-block:: bash
+.. tabs::
 
-   pip install bunenv
+   .. tab:: pip
+
+      .. code-block:: bash
+
+         pip install bunenv
+
+   .. tab:: uv
+
+      .. code-block:: bash
+
+         uv tool install bunenv
+
+   .. tab:: pipx
+
+      .. code-block:: bash
+
+         pipx install bunenv
 
 Create and activate a Bun environment:
 
-.. code-block:: bash
+.. tabs::
 
-   # Create environment with latest Bun
-   bunenv my-project
+   .. group-tab:: macOS/Linux
 
-   # Activate it (macOS/Linux)
-   source my-project/bin/activate
+      .. code-block:: bash
 
-   # Now you have an isolated Bun!
-   bun --version
-   bun init
-   bun install express
+         # Create environment with latest Bun
+         bunenv my-project
+
+         # Activate it
+         source my-project/bin/activate
+
+         # Now you have an isolated Bun!
+         bun --version
+         bun init
+         bun install express
+
+   .. group-tab:: Windows
+
+      .. code-block:: batch
+
+         REM Create environment with latest Bun
+         bunenv my-project
+
+         REM Activate it (PowerShell)
+         my-project\Scripts\Activate.ps1
+
+         REM Or in cmd.exe
+         my-project\Scripts\activate.bat
+
+         REM Now you have an isolated Bun!
+         bun --version
+         bun init
+         bun add express
 
 When you're done:
 
@@ -290,12 +328,35 @@ Common Commands
    # List available versions
    bunenv --list
 
-   # Activate (macOS/Linux)
-   source myenv/bin/activate
+Activation:
 
-   # Activate (Windows)
-   myenv\Scripts\activate.bat           # cmd.exe
-   myenv\Scripts\Activate.ps1           # PowerShell
+.. tabs::
+
+   .. group-tab:: macOS/Linux
+
+      .. code-block:: bash
+
+         # bash/zsh
+         source myenv/bin/activate
+
+         # fish
+         source myenv/bin/activate.fish
+
+   .. group-tab:: Windows
+
+      .. code-block:: batch
+
+         REM cmd.exe
+         myenv\Scripts\activate.bat
+
+      .. code-block:: powershell
+
+         # PowerShell
+         myenv\Scripts\Activate.ps1
+
+Using Bun:
+
+.. code-block:: bash
 
    # Use Bun
    bun --version
