@@ -170,10 +170,42 @@ jobs:
       - name: Run ty
         uses: JacobCoffee/ty-action@v0.0.1
 
+  # Test the bunenv GitHub Action
+  action-test:
+    name: Test bunenv action on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        bun-version: ['latest', '1.3.3']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test bunenv action
+        uses: ./
+        with:
+          bun-version: ${{ matrix.bun-version }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify Bun installation
+        run: |
+          bun --version
+          bun --help
+        shell: bash
+
+      - name: Test Bun functionality
+        run: |
+          echo '{"name": "test", "version": "1.0.0"}' > package.json
+          bun install
+          bun --version
+        shell: bash
+
   build:
     name: Build package
     runs-on: ubuntu-latest
-    needs: [test, smoke-test, integration-test, lint, type-check]
+    needs: [test, smoke-test, integration-test, lint, type-check, action-test]
 
     steps:
       - uses: actions/checkout@v4

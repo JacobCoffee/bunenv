@@ -1,0 +1,148 @@
+name: 'Setup Bun with bunenv'
+description: 'Set up a specific Bun version using bunenv for isolated environments'
+author: 'Jacob Coffee'
+
+branding:
+  icon: 'package'
+  color: 'orange'
+
+inputs:
+  bun-version:
+    description: 'Bun version to install (e.g., "latest", "1.3.3")'
+    required: false
+    default: 'latest'
+
+  variant:
+    description: 'Bun variant to install ("", "baseline", "musl", "profile")'
+    required: false
+    default: ''
+
+  github-token:
+    description: 'GitHub token for API requests to avoid rate limits'
+    required: false
+    default: ${{ github.token }}
+
+  cache:
+    description: 'Enable caching of bunenv and Bun installations'
+    required: false
+    default: 'true'
+
+  python-version:
+    description: 'Python version to use for installing bunenv'
+    required: false
+    default: '3.12'
+
+outputs:
+  bun-version:
+    description: 'The actual Bun version that was installed'
+    value: ${{ steps.setup-bunenv.outputs.bun-version }}
+
+  bunenv-path:
+    description: 'Path to the bunenv environment directory'
+    value: ${{ steps.setup-bunenv.outputs.bunenv-path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Get bunenv cache key
+      if: inputs.cache == 'true'
+      id: cache-key
+      shell: bash
+      run: |
+        echo "key=bunenv-${{ runner.os }}-${{ runner.arch }}-${{ inputs.bun-version }}-${{ inputs.variant }}" >> $GITHUB_OUTPUT
+
+    - name: Cache bunenv installation
+      if: inputs.cache == 'true'
+      uses: actions/cache@v4
+      with:
+        path: ~/.bunenv-cache
+        key: ${{ steps.cache-key.outputs.key }}
+        restore-keys: |
+          bunenv-${{ runner.os }}-${{ runner.arch }}-${{ inputs.bun-version }}-
+          bunenv-${{ runner.os }}-${{ runner.arch }}-
+
+    - name: Install bunenv
+      shell: bash
+      run: |
+        echo "::group::Installing bunenv"
+        pip install bunenv
+        echo "::endgroup::"
+
+    - name: Setup Bun environment
+      id: setup-bunenv
+      shell: bash
+      run: |
+        echo "::group::Creating Bun environment"
+
+        # Set environment path
+        BUNENV_PATH="${HOME}/.bunenv-cache/bunenv-${{ inputs.bun-version }}"
+        echo "bunenv-path=${BUNENV_PATH}" >> $GITHUB_OUTPUT
+
+        # Create environment if it doesn't exist
+        if [ ! -d "${BUNENV_PATH}" ]; then
+          echo "Creating new bunenv environment at ${BUNENV_PATH}"
+
+          # Build bunenv command
+          BUNENV_CMD="bunenv ${BUNENV_PATH} --bun=${{ inputs.bun-version }}"
+
+          # Add variant if specified
+          if [ -n "${{ inputs.variant }}" ]; then
+            BUNENV_CMD="${BUNENV_CMD} --variant=${{ inputs.variant }}"
+          fi
+
+          # Add GitHub token if specified
+          if [ -n "${{ inputs.github-token }}" ]; then
+            BUNENV_CMD="${BUNENV_CMD} --github-token=${{ inputs.github-token }}"
+          fi
+
+          # Run bunenv
+          ${BUNENV_CMD}
+        else
+          echo "Using cached bunenv environment at ${BUNENV_PATH}"
+        fi
+
+        echo "::endgroup::"
+
+    - name: Activate Bun environment
+      shell: bash
+      run: |
+        echo "::group::Activating Bun environment"
+
+        BUNENV_PATH="${HOME}/.bunenv-cache/bunenv-${{ inputs.bun-version }}"
+
+        # Add Bun to PATH
+        if [ "$RUNNER_OS" = "Windows" ]; then
+          echo "${BUNENV_PATH}/Scripts" >> $GITHUB_PATH
+        else
+          echo "${BUNENV_PATH}/bin" >> $GITHUB_PATH
+        fi
+
+        # Set environment variables
+        echo "BUN_VIRTUAL_ENV=${BUNENV_PATH}" >> $GITHUB_ENV
+        echo "BUN_INSTALL=${BUNENV_PATH}" >> $GITHUB_ENV
+
+        echo "::endgroup::"
+
+    - name: Verify Bun installation
+      id: verify-bun
+      shell: bash
+      run: |
+        echo "::group::Verifying Bun installation"
+
+        # Verify bun is in PATH
+        which bun || (echo "::error::Bun not found in PATH" && exit 1)
+
+        # Get and output version
+        BUN_VERSION=$(bun --version)
+        echo "Installed Bun version: ${BUN_VERSION}"
+        echo "bun-version=${BUN_VERSION}" >> $GITHUB_OUTPUT
+
+        # Test bun works
+        bun --help > /dev/null || (echo "::error::Bun is not working correctly" && exit 1)
+
+        echo "::endgroup::"
