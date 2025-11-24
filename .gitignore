@@ -27,7 +27,7 @@ venv/
 ENV/
 env/
 .bunenv/
-bunenv/
+/bunenv/
 
 # IDEs
 .vscode/

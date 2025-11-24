@@ -7,6 +7,42 @@ on:
     branches: [main]
 
 jobs:
+  # Test suite with coverage
+  test:
+    name: Tests on ${{ matrix.os }} - Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Sync dependencies
+        run: uv sync --group dev
+
+      - name: Run tests with coverage
+        run: uv run pytest
+
+      - name: Upload coverage to Codecov
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+
   # Smoke tests - quick validation on all platforms
   smoke-test:
     name: Smoke test on ${{ matrix.os }} - Python ${{ matrix.python-version }}
@@ -137,7 +173,7 @@ jobs:
   build:
     name: Build package
     runs-on: ubuntu-latest
-    needs: [smoke-test, integration-test, lint, type-check]
+    needs: [test, smoke-test, integration-test, lint, type-check]
 
     steps:
       - uses: actions/checkout@v4
