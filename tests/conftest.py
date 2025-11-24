@@ -7,7 +7,6 @@ from unittest.mock import MagicMock
 
 import pytest
 
-
 # ===== GitHub API Mock Fixtures =====
 
 
@@ -81,8 +80,9 @@ def mock_urlopen(request: Any, monkeypatch: pytest.MonkeyPatch, mock_github_rele
         if "github.com/oven-sh/bun/releases/download" in url:
             # Return fake binary content (minimal valid ZIP structure)
             import zipfile
+
             zip_buffer = io.BytesIO()
-            with zipfile.ZipFile(zip_buffer, 'w') as zf:
+            with zipfile.ZipFile(zip_buffer, "w") as zf:
                 zf.writestr("bun-linux-x64/bun", b"#!/bin/sh\necho '1.0.0'\n")
             zip_buffer.seek(0)
             return zip_buffer
@@ -90,7 +90,6 @@ def mock_urlopen(request: Any, monkeypatch: pytest.MonkeyPatch, mock_github_rele
         raise ValueError(f"Unexpected URL in test: {url}")
 
     # Patch both the urllib2 module (which is urllib.request in Python 3)
-    import bunenv
     try:
         import urllib.request as urllib2
     except ImportError:
@@ -123,6 +122,7 @@ def mock_linux_x64(mock_platform: Callable, monkeypatch: pytest.MonkeyPatch) -> 
     """Mock Linux x86_64 platform."""
     mock_platform(system="Linux", machine="x86_64")
     import bunenv
+
     monkeypatch.setattr(bunenv, "is_WIN", False)
     monkeypatch.setattr(bunenv, "is_CYGWIN", False)
 
@@ -132,6 +132,7 @@ def mock_darwin_arm(mock_platform: Callable, monkeypatch: pytest.MonkeyPatch) ->
     """Mock macOS ARM64 platform."""
     mock_platform(system="Darwin", machine="ARM64")
     import bunenv
+
     monkeypatch.setattr(bunenv, "is_WIN", False)
     monkeypatch.setattr(bunenv, "is_CYGWIN", False)
 
@@ -141,6 +142,7 @@ def mock_windows(mock_platform: Callable, monkeypatch: pytest.MonkeyPatch) -> No
     """Mock Windows platform."""
     mock_platform(system="Windows", machine="AMD64")
     import bunenv
+
     monkeypatch.setattr(bunenv, "is_WIN", True)
     monkeypatch.setattr(bunenv, "is_CYGWIN", False)
 

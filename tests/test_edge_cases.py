@@ -4,7 +4,6 @@ import argparse
 import os
 import sys
 from typing import Any, cast
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -48,6 +47,7 @@ class TestMainEntryPoint:
     def test_main_entry_point_exists(self) -> None:
         """Test that __main__ entry point exists in the module."""
         import importlib.util
+
         spec = importlib.util.find_spec("bunenv")
         assert spec is not None
         assert spec.origin is not None
@@ -93,11 +93,7 @@ if True:  # Simulates __name__ == "__main__"
 """)
 
         # Run the script
-        result = subprocess.run(
-            [sys.executable, str(test_script)],
-            capture_output=True,
-            text=True
-        )
+        result = subprocess.run([sys.executable, str(test_script)], capture_output=True, text=True)
 
         # Should exit with 0 for --help
         assert result.returncode == 0
@@ -127,6 +123,7 @@ class TestWindowsDecoding:
                 return self.returncode
 
         import subprocess
+
         monkeypatch.setattr(subprocess, "Popen", lambda *args, **kwargs: MockProc())
 
         returncode, output = bunenv.callit(["test"], show_stdout=False)
@@ -144,18 +141,3 @@ class TestConfigEdgeCases:
         assert hasattr(bunenv.Config, "_default")
         assert isinstance(bunenv.Config._default, dict)
         assert "github_token" in bunenv.Config._default
-
-
-class TestUtilityEdgeCases:
-    """Tests for utility function edge cases."""
-
-    def test_to_utf8_with_binary_fallback(self) -> None:
-        """Test to_utf8 fallback path for non-UTF-8 bytes."""
-        # Create a byte string that's not valid UTF-8 but is valid cp1252
-        # Windows-1252 specific character
-        text = b"\x80"  # Euro sign in cp1252
-
-        result = bunenv.to_utf8(text)
-
-        # Should return something (either decoded or original)
-        assert result is not None

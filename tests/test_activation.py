@@ -2,7 +2,6 @@
 
 import argparse
 import os
-import shutil
 from typing import Any
 
 import pytest
@@ -110,7 +109,9 @@ class TestInstallActivate:
         # Should have prompt disable/enable sections
         assert "BUN_VIRTUAL_ENV_DISABLE_PROMPT" in content
 
-    def test_install_activate_system_bun(self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch, mock_linux_x64: Any) -> None:
+    def test_install_activate_system_bun(
+        self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch, mock_linux_x64: Any
+    ) -> None:
         """Test activation script with system bun."""
         import subprocess
 
@@ -168,7 +169,9 @@ class TestSetPredeactivateHook:
 class TestCreateEnvironment:
     """Tests for create_environment function."""
 
-    def test_create_environment_basic(self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch, mock_linux_x64: Any) -> None:
+    def test_create_environment_basic(
+        self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch, mock_linux_x64: Any
+    ) -> None:
         """Test basic environment creation."""
 
         def fake_install_bun(env_dir: str, src_dir: str, args: Any) -> None:
@@ -201,14 +204,14 @@ class TestCreateEnvironment:
         env_dir = tmp_path / "existing-env"
         env_dir.mkdir()
 
-        args = argparse.Namespace(
-            bun="1.0.0", python_virtualenv=False, force=False, requirements="", clean_src=False
-        )
+        args = argparse.Namespace(bun="1.0.0", python_virtualenv=False, force=False, requirements="", clean_src=False)
 
         with pytest.raises(SystemExit):
             bunenv.create_environment(str(env_dir), args)
 
-    def test_create_environment_existing_dir_with_force(self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch, mock_linux_x64: Any) -> None:
+    def test_create_environment_existing_dir_with_force(
+        self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch, mock_linux_x64: Any
+    ) -> None:
         """Test that existing directory with --force continues."""
         monkeypatch.setattr(bunenv, "install_bun", lambda *args: None)
         monkeypatch.setattr(bunenv, "install_activate", lambda *args: None)
@@ -216,30 +219,30 @@ class TestCreateEnvironment:
         env_dir = tmp_path / "existing-env"
         env_dir.mkdir()
 
-        args = argparse.Namespace(
-            bun="1.0.0", python_virtualenv=False, force=True, requirements="", clean_src=False
-        )
+        args = argparse.Namespace(bun="1.0.0", python_virtualenv=False, force=True, requirements="", clean_src=False)
 
         # Should not raise
         bunenv.create_environment(str(env_dir), args)
 
-    def test_create_environment_clean_src(self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch, mock_linux_x64: Any) -> None:
+    def test_create_environment_clean_src(
+        self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch, mock_linux_x64: Any
+    ) -> None:
         """Test that src directory is cleaned when --clean-src is used."""
         monkeypatch.setattr(bunenv, "install_bun", lambda *args: None)
         monkeypatch.setattr(bunenv, "install_activate", lambda *args: None)
 
         env_dir = tmp_path / "test-env"
 
-        args = argparse.Namespace(
-            bun="1.0.0", python_virtualenv=False, force=False, requirements="", clean_src=True
-        )
+        args = argparse.Namespace(bun="1.0.0", python_virtualenv=False, force=False, requirements="", clean_src=True)
 
         bunenv.create_environment(str(env_dir), args)
 
         # src directory should be removed
         assert not (env_dir / "src").exists()
 
-    def test_create_environment_with_requirements(self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch, mock_linux_x64: Any) -> None:
+    def test_create_environment_with_requirements(
+        self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch, mock_linux_x64: Any
+    ) -> None:
         """Test environment creation with requirements file."""
         install_packages_called = False
 
@@ -267,7 +270,9 @@ class TestCreateEnvironment:
 
         assert install_packages_called
 
-    def test_create_environment_python_virtualenv(self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch, mock_linux_x64: Any) -> None:
+    def test_create_environment_python_virtualenv(
+        self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch, mock_linux_x64: Any
+    ) -> None:
         """Test environment creation with Python virtualenv integration."""
         predeactivate_called = False
 
@@ -281,23 +286,21 @@ class TestCreateEnvironment:
 
         env_dir = tmp_path / "test-env"
 
-        args = argparse.Namespace(
-            bun="1.0.0", python_virtualenv=True, force=True, requirements="", clean_src=False
-        )
+        args = argparse.Namespace(bun="1.0.0", python_virtualenv=True, force=True, requirements="", clean_src=False)
 
         bunenv.create_environment(str(env_dir), args)
 
         assert predeactivate_called
 
-    def test_create_environment_system_bun(self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch, mock_linux_x64: Any) -> None:
+    def test_create_environment_system_bun(
+        self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch, mock_linux_x64: Any
+    ) -> None:
         """Test environment creation with system bun."""
         monkeypatch.setattr(bunenv, "install_activate", lambda *args: None)
 
         env_dir = tmp_path / "test-env"
 
-        args = argparse.Namespace(
-            bun="system", python_virtualenv=False, force=False, requirements="", clean_src=False
-        )
+        args = argparse.Namespace(bun="system", python_virtualenv=False, force=False, requirements="", clean_src=False)
 
         bunenv.create_environment(str(env_dir), args)
 
