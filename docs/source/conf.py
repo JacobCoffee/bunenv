@@ -63,35 +63,29 @@ master_doc = "index"
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = "sphinx_rtd_theme"
+html_theme = "shibuya"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+html_show_sourcelink = True
+html_title = "Docs"
 
-# Theme options are theme-specific and customize the look and feel of a theme
-# further.  For a list of options available for each theme, see the
-# documentation.
-html_theme_options = {
-    "logo_only": False,
-    "prev_next_buttons_location": "bottom",
-    "style_external_links": False,
-    "collapse_navigation": False,
-    "sticky_navigation": True,
-    "navigation_depth": 4,
-    "includehidden": True,
-    "titles_only": False,
+# Theme options for Shibuya
+html_context = {
+    "source_type": "github",
+    "source_user": "JacobCoffee",
+    "source_repo": "bunenv",
 }
 
-# The name of an image file (relative to this directory) to place at the top
-# of the sidebar.
-# html_logo = None
-
-# The name of an image file (within the static path) to use as favicon of the
-# docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
-# pixels large.
-# html_favicon = None
+html_theme_options = {
+    "logo_target": "/",
+    "github_url": "https://github.com/JacobCoffee/bunenv",
+    "nav_links": [
+        {"title": "PyPI", "url": "https://pypi.org/project/bunenv/"},
+    ],
+}
 
 # -- Options for autodoc -----------------------------------------------------
 
