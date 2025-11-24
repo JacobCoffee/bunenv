@@ -24,13 +24,13 @@ help: ## Display this help text for Makefile
 
 docs-clean: ## Dump the existing built docs
 	@echo "=> Cleaning documentation build assets"
-	@rm -rf docs/source/_build
+	@rm -rf docs/_build
 	@echo "=> Removed existing documentation build assets"
 
 docs-serve: docs-clean ## Serve the docs locally
 	@echo "=> Serving documentation"
-	$(UV) run sphinx-autobuild docs/source docs/source/_build/ -j auto --watch src --watch docs --port 8002
+	$(UV) run sphinx-autobuild docs docs/_build/ -j auto --watch src --watch docs --port 8002
 
 docs: docs-clean ## Dump the existing built docs and rebuild them
 	@echo "=> Building documentation"
-	@$(UV) run sphinx-build -M html docs/source docs/source/_build/ -E -a -j auto --keep-going
+	@$(UV) run sphinx-build -M html docs docs/_build/ -E -a -j auto --keep-going
