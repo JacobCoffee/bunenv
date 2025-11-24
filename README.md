@@ -112,8 +112,29 @@ source .bunenv/bin/activate
 
 ### CI/CD Integration
 
+#### GitHub Actions (Recommended)
+
+Use the official bunenv GitHub Action for the simplest setup:
+
 ```yaml
-# GitHub Actions example
+# Use the bunenv action (easiest!)
+- name: Setup Bun
+  uses: JacobCoffee/bunenv@v1
+  with:
+    bun-version: '1.3.3'
+
+- name: Build and test
+  run: |
+    bun install
+    bun test
+```
+
+See [ACTION.md](ACTION.md) for complete documentation and advanced usage.
+
+#### Manual Setup
+
+```yaml
+# Manual installation
 - name: Setup Bun environment
   run: |
     pip install bunenv
