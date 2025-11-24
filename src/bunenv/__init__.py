@@ -32,7 +32,7 @@ from typing import Any, Callable, Iterator
 
 IncompleteRead = http.client.IncompleteRead
 
-bunenv_version: str = "0.1.0"
+bunenv_version: str = "1.0.0"
 
 join: Callable[..., str] = os.path.join
 abspath: Callable[[str], str] = os.path.abspath
