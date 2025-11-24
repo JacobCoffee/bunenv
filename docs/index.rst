@@ -266,29 +266,15 @@ Documentation Contents
 
 .. toctree::
    :maxdepth: 2
-   :caption: Tutorials & Guides
+   :caption: Guides
 
-   guides/quickstart
    guides/index
-   guides/workflows
-   guides/configuration
-   guides/advanced
-   guides/troubleshooting
-   guides/contributing
 
 .. toctree::
    :maxdepth: 2
    :caption: Reference
 
    api/index
-   api/cli
-
-.. toctree::
-   :maxdepth: 1
-   :caption: About
-
-   guides/comparison
-   guides/migrating
 
 Platform Support
 ----------------
