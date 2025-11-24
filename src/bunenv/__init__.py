@@ -13,10 +13,10 @@ Adapted from nodeenv (https://github.com/ekalinin/nodeenv)
 
 import argparse
 import contextlib
+import http.client
 import io
 import json
 import logging
-import operator
 import os
 import platform
 import shutil
@@ -25,35 +25,19 @@ import stat
 import subprocess
 import sys
 import sysconfig
+import urllib.request as urllib2
 import zipfile
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
+from configparser import ConfigParser
+from typing import Any, Callable, Iterator
 
-try:  # pragma: no cover (py2 only)
-    # noinspection PyCompatibility
-    import urllib2  # type: ignore[import-not-found]
-    from ConfigParser import SafeConfigParser as ConfigParser  # type: ignore[import-not-found]
-
-    iteritems = operator.methodcaller("iteritems")
-    import httplib  # type: ignore[import-not-found]
-
-    IncompleteRead = httplib.IncompleteRead  # type: ignore[name-defined]
-except ImportError:  # pragma: no cover (py3 only)
-    # noinspection PyUnresolvedReferences
-    import urllib.request as urllib2  # type: ignore[no-redef]
-    from configparser import ConfigParser
-
-    iteritems = operator.methodcaller("items")
-    import http.client  # type: ignore[no-redef]
-
-    IncompleteRead = http.client.IncompleteRead  # type: ignore[misc]
+IncompleteRead = http.client.IncompleteRead
 
 bunenv_version: str = "0.1.0"
 
 join: Callable[..., str] = os.path.join
 abspath: Callable[[str], str] = os.path.abspath
-src_base_url: Optional[str] = None  # Will be set to GitHub API base
+src_base_url: str | None = None  # Will be set to GitHub API base
 
-is_PY3: bool = sys.version_info[0] >= 3
 is_WIN: bool = platform.system() == "Windows"
 is_CYGWIN: bool = platform.system().startswith(("CYGWIN", "MSYS"))
 
@@ -63,43 +47,22 @@ ignore_ssl_certs: bool = False
 # Utils
 
 
-# https://github.com/jhermann/waif/blob/master/python/to_uft8.py
-def to_utf8(text: Any) -> Any:
-    """Convert given text to UTF-8 encoding (as far as possible)."""
-    if not text or is_PY3:
-        return text
-
-    try:  # unicode or pure ascii
-        return text.encode("utf8")
-    except UnicodeDecodeError:
-        try:  # successful UTF-8 decode means it's pretty sure UTF-8
-            text.decode("utf8")
-            return text
-        except UnicodeDecodeError:
-            try:  # get desperate; and yes, this has a western hemisphere bias
-                return text.decode("cp1252").encode("utf8")
-            except UnicodeDecodeError:
-                pass
-
-    return text  # return unchanged, hope for the best
-
-
 class Config:
     """Configuration namespace."""
 
     # Class attribute for defaults (set at module level)
-    _default: Dict[str, Any]
+    _default: dict[str, Any]
 
     # Defaults
     bun: str = "latest"
     variant: str = ""  # baseline, profile, musl
-    github_token: Optional[str] = None  # For GitHub API rate limits
+    github_token: str | None = None  # For GitHub API rate limits
     prebuilt: bool = True  # Always true for Bun (no source builds)
     ignore_ssl_certs: bool = False
-    mirror: Optional[str] = None  # For GitHub mirrors if needed
+    mirror: str | None = None  # For GitHub mirrors if needed
 
     @classmethod
-    def _load(cls, configfiles: List[str], verbose: bool = False) -> None:
+    def _load(cls, configfiles: list[str], verbose: bool = False) -> None:
         """Load configuration from the given files in reverse order,
         if they exist and have a [bunenv] section.
         Additionally, load version from .bun-version if file exists.
@@ -115,7 +78,7 @@ class Config:
             if not ini_file.has_section(section):
                 continue
 
-            for attr, val in iteritems(vars(cls)):
+            for attr, val in vars(cls).items():
                 if attr.startswith("_") or not ini_file.has_option(section, attr):
                     continue
 
@@ -137,12 +100,10 @@ class Config:
     def _dump(cls) -> None:
         """Print defaults for the README."""
         print("    [bunenv]")
-        print(
-            "    " + "\n    ".join("%s = %s" % (k, v) for k, v in sorted(iteritems(vars(cls))) if not k.startswith("_"))
-        )
+        print("    " + "\n    ".join(f"{k} = {v}" for k, v in sorted(vars(cls).items()) if not k.startswith("_")))
 
 
-Config._default: Dict[str, Any] = dict((attr, val) for attr, val in iteritems(vars(Config)) if not attr.startswith("_"))
+Config._default: dict[str, Any] = {attr: val for attr, val in vars(Config).items() if not attr.startswith("_")}
 
 
 def clear_output(out: bytes) -> str:
@@ -155,7 +116,7 @@ def remove_env_bin_from_path(env: str, env_bin_dir: str) -> str:
     return env.replace(env_bin_dir + ":", "")
 
 
-def parse_version(version_str: str) -> Tuple[int, ...]:
+def parse_version(version_str: str) -> tuple[int, ...]:
     """Parse version string to a tuple of integer parts"""
     try:
         # Remove prefixes in correct order (longest first)
@@ -169,7 +130,7 @@ def parse_version(version_str: str) -> Tuple[int, ...]:
         return ()
 
 
-def bun_version_from_args(args: argparse.Namespace) -> Tuple[int, ...]:
+def bun_version_from_args(args: argparse.Namespace) -> tuple[int, ...]:
     """Parse the bun version from the argparse args"""
     if args.bun == "system":
         out, err = subprocess.Popen(["bun", "--version"], stdout=subprocess.PIPE).communicate()
@@ -187,8 +148,8 @@ def create_logger() -> logging.Logger:
     # monkey patch
     def emit(self: logging.StreamHandler, record: logging.LogRecord) -> None:
         msg = self.format(record)
-        fs = "%s" if getattr(record, "continued", False) else "%s\n"
-        self.stream.write(fs % to_utf8(msg))
+        fs = "{}" if getattr(record, "continued", False) else "{}\n"
+        self.stream.write(fs.format(msg))
         self.flush()
 
     logging.StreamHandler.emit = emit  # type: ignore[assignment]
@@ -363,12 +324,9 @@ def parse_args(check: bool = True) -> argparse.Namespace:
 
 def mkdir(path: str) -> None:
     """Create directory"""
-    if not os.path.exists(path):
-        logger.debug(" * Creating: %s ... ", path, extra=dict(continued=True))
-        os.makedirs(path)
-        logger.debug("done.")
-    else:
-        logger.debug(" * Directory %s already exists", path)
+    logger.debug(" * Creating: %s ... ", path, extra={"continued": True})
+    os.makedirs(path, exist_ok=True)
+    logger.debug("done.")
 
 
 def make_executable(filename: str) -> None:
@@ -377,13 +335,12 @@ def make_executable(filename: str) -> None:
 
 
 # noinspection PyArgumentList
-def writefile(dest: str, content: Union[str, bytes], overwrite: bool = True, append: bool = False) -> None:
+def writefile(dest: str, content: str | bytes, overwrite: bool = True, append: bool = False) -> None:
     """Create file and write content in it"""
-    content = to_utf8(content)
-    if is_PY3 and not isinstance(content, bytes):
+    if not isinstance(content, bytes):
         content = bytes(content, "utf-8")
     if not os.path.exists(dest):
-        logger.debug(" * Writing %s ... ", dest, extra=dict(continued=True))
+        logger.debug(" * Writing %s ... ", dest, extra={"continued": True})
         with open(dest, "wb") as f:
             f.write(content)
         make_executable(dest)
@@ -411,24 +368,25 @@ def writefile(dest: str, content: Union[str, bytes], overwrite: bool = True, app
 
 
 def callit(
-    cmd: Union[List[str], str],
+    cmd: list[str] | str,
     show_stdout: bool = True,
     in_shell: bool = False,
-    cwd: Optional[str] = None,
-    extra_env: Optional[Dict[str, str]] = None,
-) -> Tuple[int, List[str]]:
+    cwd: str | None = None,
+    extra_env: dict[str, str] | None = None,
+) -> tuple[int, list[str]]:
     """Execute cmd line in sub-shell"""
-    all_output: List[str] = []
-    cmd_parts: List[str] = []
+    all_output: list[str] = []
+    cmd_parts: list[str] = []
 
     for part in cmd:  # type: ignore[union-attr]
         if len(part) > 45:
             part = part[:20] + "..." + part[-20:]
         if " " in part or "\n" in part or '"' in part or "'" in part:
-            part = '"%s"' % part.replace('"', '\\"')
+            escaped_part = part.replace('"', '\\"')
+            part = f'"{escaped_part}"'
         cmd_parts.append(part)
     cmd_desc = " ".join(cmd_parts)
-    logger.debug(" ** Running command %s" % cmd_desc)
+    logger.debug(f" ** Running command {cmd_desc}")
 
     if in_shell:
         cmd = " ".join(cmd)  # type: ignore[arg-type]
@@ -437,7 +395,7 @@ def callit(
     stdout = subprocess.PIPE
 
     # env
-    env: Optional[Dict[str, str]] = None
+    env: dict[str, str] | None = None
     if extra_env:
         env = os.environ.copy()
         if extra_env:
@@ -448,9 +406,8 @@ def callit(
         proc = subprocess.Popen(
             cmd, stderr=subprocess.STDOUT, stdin=None, stdout=stdout, cwd=cwd, env=env, shell=in_shell
         )
-    except Exception:
-        e = sys.exc_info()[1]
-        logger.error("Error %s while executing command %s" % (e, cmd_desc))
+    except Exception as e:
+        logger.error(f"Error {e} while executing command {cmd_desc}")
         raise
 
     stdout_stream = proc.stdout
@@ -459,13 +416,10 @@ def callit(
         if not line_bytes:
             break
         line: str
-        try:
-            if is_WIN:
-                line = line_bytes.decode("mbcs").rstrip()
-            else:
-                line = line_bytes.decode("utf8").rstrip()
-        except UnicodeDecodeError:
-            line = line_bytes.decode("cp866").rstrip()
+        if is_WIN:
+            line = line_bytes.decode("mbcs", errors="replace").rstrip()
+        else:
+            line = line_bytes.decode("utf8", errors="replace").rstrip()
         all_output.append(line)
         if show_stdout:
             logger.info(line)
@@ -476,7 +430,7 @@ def callit(
         if show_stdout:
             for s in all_output:
                 logger.critical(s)
-        raise OSError("Command %s failed with error code %s" % (cmd_desc, proc.returncode))
+        raise OSError(f"Command {cmd_desc} failed with error code {proc.returncode}")
 
     return proc.returncode, all_output
 
@@ -486,13 +440,13 @@ def is_x86_64_musl() -> bool:
     return sysconfig.get_config_var("HOST_GNU_TYPE") == "x86_64-pc-linux-musl"
 
 
-def get_bun_bin_url(version: str, variant: str = "", mirror: Optional[str] = None) -> str:
+def get_bun_bin_url(version: str, variant: str = "", mirror: str | None = None) -> str:
     """Construct GitHub releases URL for Bun binary
 
     Bun provides prebuilt binaries for multiple platforms in the format:
     bun-{platform}-{arch}[-{variant}].zip
     """
-    archmap: Dict[str, str] = {
+    archmap: dict[str, str] = {
         "x86_64": "x64",
         "amd64": "x64",
         "AMD64": "x64",
@@ -501,7 +455,7 @@ def get_bun_bin_url(version: str, variant: str = "", mirror: Optional[str] = Non
         "aarch64": "aarch64",
     }
 
-    sysmap: Dict[str, str] = {
+    sysmap: dict[str, str] = {
         "Darwin": "darwin",
         "Linux": "linux",
         "Windows": "windows",
@@ -562,7 +516,7 @@ def download_bun_bin(bun_url: str, src_dir: str, args: argparse.Namespace) -> No
 
 def urlopen(url: str) -> Any:
     home_url = "https://github.com/JacobCoffee/bunenv/"
-    headers: Dict[str, str] = {"User-Agent": "bunenv/%s (%s)" % (bunenv_version, home_url)}
+    headers: dict[str, str] = {"User-Agent": f"bunenv/{bunenv_version} ({home_url})"}
 
     # Add GitHub token if provided
     if Config.github_token:
@@ -586,7 +540,7 @@ def copy_bun_from_prebuilt(env_dir: str, src_dir: str, bun_version: str) -> None
     Bun zip structure: bun-{platform}-{arch}/bun (or bun.exe on Windows)
     Extract to: env_dir/bin/bun (or env_dir/Scripts/bun.exe on Windows)
     """
-    logger.info(".", extra=dict(continued=True))
+    logger.info(".", extra={"continued": True})
 
     if is_WIN:
         dest_dir = join(env_dir, "Scripts")
@@ -604,14 +558,14 @@ def copy_bun_from_prebuilt(env_dir: str, src_dir: str, bun_version: str) -> None
     bun_folders = glob_module.glob(join(src_dir, "bun-*"))
 
     if not bun_folders:
-        raise OSError("Could not find extracted Bun directory in %s" % src_dir)
+        raise OSError(f"Could not find extracted Bun directory in {src_dir}")
 
     bun_folder = bun_folders[0]
     src_binary = join(bun_folder, bun_binary)
     dest_binary = join(dest_dir, bun_binary)
 
     if not os.path.exists(src_binary):
-        raise OSError("Could not find Bun binary at %s" % src_binary)
+        raise OSError(f"Could not find Bun binary at {src_binary}")
 
     # Copy the binary
     shutil.copy2(src_binary, dest_binary)
@@ -620,7 +574,7 @@ def copy_bun_from_prebuilt(env_dir: str, src_dir: str, bun_version: str) -> None
     if not is_WIN:
         make_executable(dest_binary)
 
-    logger.info(".", extra=dict(continued=True))
+    logger.info(".", extra={"continued": True})
 
 
 def install_bun(env_dir: str, src_dir: str, args: argparse.Namespace) -> None:
@@ -629,7 +583,7 @@ def install_bun(env_dir: str, src_dir: str, args: argparse.Namespace) -> None:
     """
     try:
         install_bun_wrapped(env_dir, src_dir, args)
-    except BaseException:
+    except Exception:
         # this restores the newline suppressed by continued=True
         logger.info("")
         raise
@@ -638,7 +592,7 @@ def install_bun(env_dir: str, src_dir: str, args: argparse.Namespace) -> None:
 def install_bun_wrapped(env_dir: str, src_dir: str, args: argparse.Namespace) -> None:
     env_dir = abspath(env_dir)
 
-    logger.info(" * Install prebuilt Bun (%s) " % args.bun, extra=dict(continued=True))
+    logger.info(f" * Install prebuilt Bun ({args.bun}) ", extra={"continued": True})
 
     bun_url = get_bun_bin_url(args.bun, args.variant, args.mirror)
 
@@ -646,10 +600,10 @@ def install_bun_wrapped(env_dir: str, src_dir: str, args: argparse.Namespace) ->
     try:
         download_bun_bin(bun_url, src_dir, args)
     except urllib2.HTTPError as e:
-        logger.error("Failed to download from %s: %s" % (bun_url, e))
+        logger.error(f"Failed to download from {bun_url}: {e}")
         raise
 
-    logger.info(".", extra=dict(continued=True))
+    logger.info(".", extra={"continued": True})
 
     # Copy binary to environment
     copy_bun_from_prebuilt(env_dir, src_dir, args.bun)
@@ -662,7 +616,7 @@ def install_packages(env_dir: str, args: argparse.Namespace) -> None:
     if not args.requirements:
         return
 
-    logger.info(" * Install packages ... ", extra=dict(continued=True))
+    logger.info(" * Install packages ... ", extra={"continued": True})
 
     bun_bin = join(env_dir, "bin", "bun")
     if is_WIN:
@@ -680,7 +634,7 @@ def install_packages(env_dir: str, args: argparse.Namespace) -> None:
 def install_activate(env_dir: str, args: argparse.Namespace) -> None:
     """Install virtual environment activation script"""
     if is_WIN:
-        files: Dict[str, str] = {
+        files: dict[str, str] = {
             "activate.bat": ACTIVATE_BAT,
             "deactivate.bat": DEACTIVATE_BAT,
             "Activate.ps1": ACTIVATE_PS1,
@@ -698,10 +652,10 @@ def install_activate(env_dir: str, args: argparse.Namespace) -> None:
     if args.bun == "system":
         files["bun"] = SHIM
 
-    prompt = args.prompt or "(%s)" % os.path.basename(os.path.abspath(env_dir))
+    prompt = args.prompt or f"({os.path.basename(os.path.abspath(env_dir))})"
 
     if args.bun == "system":
-        env: Dict[str, str] = os.environ.copy()
+        env: dict[str, str] = os.environ.copy()
         env.update({"PATH": remove_env_bin_from_path(env["PATH"], bin_dir)})
         which_bun_output, _ = subprocess.Popen(["which", "bun"], stdout=subprocess.PIPE, env=env).communicate()
         shim_bun = clear_output(which_bun_output)
@@ -740,7 +694,7 @@ def create_environment(env_dir: str, args: argparse.Namespace) -> None:
         logger.info(" * Environment already exists: %s", env_dir)
         if not args.force:
             sys.exit(2)
-    src_dir = to_utf8(abspath(join(env_dir, "src")))
+    src_dir = abspath(join(env_dir, "src"))
     mkdir(src_dir)
 
     if args.bun != "system":
@@ -766,9 +720,9 @@ def create_environment(env_dir: str, args: argparse.Namespace) -> None:
         shutil.rmtree(src_dir)
 
 
-def _get_versions_json() -> List[Dict[str, Any]]:
+def _get_versions_json() -> list[dict[str, Any]]:
     """Fetch Bun versions from GitHub Releases API"""
-    headers: Dict[str, str] = {}
+    headers: dict[str, str] = {}
     if Config.github_token:
         headers["Authorization"] = f"token {Config.github_token}"
 
@@ -797,7 +751,7 @@ def _get_versions_json() -> List[Dict[str, Any]]:
     ]
 
 
-def get_bun_versions() -> List[str]:
+def get_bun_versions() -> list[str]:
     """Return all available Bun versions"""
     return [dct["version"] for dct in _get_versions_json()]
 
@@ -810,7 +764,7 @@ def print_bun_versions() -> None:
         logger.info("\t".join(chunk))
 
 
-def get_last_stable_bun_version() -> Optional[str]:
+def get_last_stable_bun_version() -> str | None:
     """Return last stable Bun version (first in the list from GitHub)"""
     versions = get_bun_versions()
     if versions:
@@ -820,18 +774,14 @@ def get_last_stable_bun_version() -> Optional[str]:
 
 def get_env_dir(args: argparse.Namespace) -> Any:
     if args.python_virtualenv:
-        if (
-            hasattr(sys, "real_prefix")
-            or (hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix)
-            or "CONDA_PREFIX" in os.environ
-        ):
+        if sys.base_prefix != sys.prefix or "CONDA_PREFIX" in os.environ:
             res = sys.prefix
         else:
             logger.error("No python virtualenv is available")
             sys.exit(2)
     else:
         res = args.env_dir
-    return to_utf8(res)
+    return res
 
 
 # noinspection PyProtectedMember
@@ -879,7 +829,7 @@ def main() -> None:
 # ---------------------------------------------------------
 # Shell scripts content
 
-DISABLE_PROMPT: Dict[str, str] = {
+DISABLE_PROMPT: dict[str, str] = {
     "activate": """
 # disable bunenv's prompt
 # (prompt already changed by original virtualenv's script)
@@ -892,7 +842,7 @@ set BUN_VIRTUAL_ENV_DISABLE_PROMPT 1
 """,
 }
 
-ENABLE_PROMPT: Dict[str, str] = {
+ENABLE_PROMPT: dict[str, str] = {
     "activate": """
 unset BUN_VIRTUAL_ENV_DISABLE_PROMPT
 """,

@@ -58,157 +58,6 @@ class TestRemoveEnvBinFromPath:
         assert result == env
 
 
-class TestToUtf8:
-    """Tests for to_utf8 function."""
-
-    def test_to_utf8_already_utf8(self) -> None:
-        """Test that UTF-8 text passes through."""
-        text = "hello world"
-        result = bunenv.to_utf8(text)
-
-        # In Python 3, should return unchanged
-        assert result == text
-
-    def test_to_utf8_empty(self) -> None:
-        """Test to_utf8 with empty string."""
-        result = bunenv.to_utf8("")
-
-        assert result == ""
-
-    def test_to_utf8_none(self) -> None:
-        """Test to_utf8 with None."""
-        result = bunenv.to_utf8(None)
-
-        assert result is None
-
-    def test_to_utf8_bytes_valid_utf8(self) -> None:
-        """Test to_utf8 with valid UTF-8 bytes."""
-        text = b"hello world"
-        result = bunenv.to_utf8(text)
-
-        assert result == b"hello world"
-
-    def test_to_utf8_bytes_invalid_encoding(self) -> None:
-        """Test to_utf8 with bytes that need encoding conversion."""
-        # Create bytes with cp1252 encoding (not valid UTF-8)
-        text = "café".encode("cp1252")
-        result = bunenv.to_utf8(text)
-
-        # Should attempt UTF-8 encode path
-        assert result is not None
-
-    def test_to_utf8_python2_paths(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Test to_utf8 Python 2 code paths by mocking is_PY3."""
-        # Mock Python 2 environment
-        monkeypatch.setattr(bunenv, "is_PY3", False)
-
-        # Test unicode string encode path (line 73)
-        class FakeUnicode:
-            """Simulate Python 2 unicode object."""
-
-            def encode(self, encoding: str) -> bytes:
-                if encoding == "utf8":
-                    return b"encoded"
-                raise UnicodeDecodeError("test", b"", 0, 1, "test")
-
-        fake_text = FakeUnicode()
-        result = bunenv.to_utf8(fake_text)
-        assert result == b"encoded"
-
-        # Test decode path (line 76-77)
-        class FakeBytesUTF8:
-            """Simulate bytes that are valid UTF-8."""
-
-            def encode(self, encoding: str) -> bytes:
-                raise UnicodeDecodeError("test", b"", 0, 1, "test")
-
-            def decode(self, encoding: str) -> str:
-                if encoding == "utf8":
-                    return self  # type: ignore
-                raise UnicodeDecodeError("test", b"", 0, 1, "test")
-
-        fake_bytes = FakeBytesUTF8()
-        result = bunenv.to_utf8(fake_bytes)
-        assert result == fake_bytes
-
-        # Test cp1252 path (line 80)
-        class FakeBytesCP1252:
-            """Simulate bytes that need cp1252 decoding."""
-
-            def encode(self, encoding: str) -> bytes:
-                raise UnicodeDecodeError("test", b"", 0, 1, "test")
-
-            def decode(self, encoding: str) -> "FakeBytesCP1252":
-                if encoding == "utf8":
-                    raise UnicodeDecodeError("test", b"", 0, 1, "test")
-                if encoding == "cp1252":
-                    return self  # Return self to chain .encode("utf8")
-                raise UnicodeDecodeError("test", b"", 0, 1, "test")
-
-        class FakeBytesCP1252WithEncode:
-            """Simulate cp1252 decoded string."""
-
-            called_encode = False
-
-            def encode(self, encoding: str) -> bytes:
-                if encoding == "utf8":
-                    # First encode call fails
-                    raise UnicodeDecodeError("test", b"", 0, 1, "test")
-                return b"cp1252 encoded"
-
-            def decode(self, encoding: str) -> "FakeBytesCP1252Result":
-                if encoding == "utf8":
-                    raise UnicodeDecodeError("test", b"", 0, 1, "test")
-                if encoding == "cp1252":
-                    return FakeBytesCP1252Result()  # type: ignore
-                raise UnicodeDecodeError("test", b"", 0, 1, "test")
-
-        class FakeBytesCP1252Result:
-            """Simulate result of cp1252 decode."""
-
-            def encode(self, encoding: str) -> bytes:
-                if encoding == "utf8":
-                    return b"cp1252->utf8"
-                raise UnicodeDecodeError("test", b"", 0, 1, "test")
-
-        # Actually test the cp1252 decode -> utf8 encode path (line 80)
-        class FakeBytesForCP1252Path:
-            def encode(self, encoding: str) -> bytes:
-                raise UnicodeDecodeError("test", b"", 0, 1, "test")
-
-            def decode(self, encoding: str) -> "FakeDecodedString":
-                if encoding == "utf8":
-                    raise UnicodeDecodeError("test", b"", 0, 1, "test")
-                if encoding == "cp1252":
-                    return FakeDecodedString()
-                raise UnicodeDecodeError("test", b"", 0, 1, "test")
-
-        class FakeDecodedString:
-            def encode(self, encoding: str) -> bytes:
-                if encoding == "utf8":
-                    return b"cp1252->utf8"
-                raise UnicodeDecodeError("test", b"", 0, 1, "test")
-
-        fake_cp1252 = FakeBytesForCP1252Path()
-        result = bunenv.to_utf8(fake_cp1252)
-        # Should return cp1252->utf8 bytes (line 80)
-        assert result == b"cp1252->utf8"
-
-        # Test all-failures path (line 84)
-        class FakeBytesFail:
-            """Simulate bytes that fail all decoding attempts."""
-
-            def encode(self, encoding: str) -> bytes:
-                raise UnicodeDecodeError("test", b"", 0, 1, "test")
-
-            def decode(self, encoding: str) -> str:
-                raise UnicodeDecodeError("test", b"", 0, 1, "test")
-
-        fake_fail = FakeBytesFail()
-        result = bunenv.to_utf8(fake_fail)
-        assert result == fake_fail  # Should return unchanged (line 84)
-
-
 class TestMkdir:
     """Tests for mkdir function."""
 
@@ -603,7 +452,9 @@ class TestIsX8664Musl:
         """Test detection of musl libc."""
         import sysconfig
 
-        monkeypatch.setattr(sysconfig, "get_config_var", lambda x: "x86_64-pc-linux-musl" if x == "HOST_GNU_TYPE" else None)
+        monkeypatch.setattr(
+            sysconfig, "get_config_var", lambda x: "x86_64-pc-linux-musl" if x == "HOST_GNU_TYPE" else None
+        )
 
         result = bunenv.is_x86_64_musl()
 
@@ -613,7 +464,9 @@ class TestIsX8664Musl:
         """Test when not using musl libc."""
         import sysconfig
 
-        monkeypatch.setattr(sysconfig, "get_config_var", lambda x: "x86_64-pc-linux-gnu" if x == "HOST_GNU_TYPE" else None)
+        monkeypatch.setattr(
+            sysconfig, "get_config_var", lambda x: "x86_64-pc-linux-gnu" if x == "HOST_GNU_TYPE" else None
+        )
 
         result = bunenv.is_x86_64_musl()
 

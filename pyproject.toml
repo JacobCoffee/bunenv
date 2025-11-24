@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "Jacob Coffee", email = "jacob@z7x.org" }
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 dependencies = []
 license = { text = "BSD-3-Clause" }
 keywords = ["bun", "environment", "virtual", "isolated"]
@@ -19,8 +19,6 @@ classifiers = [
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -67,7 +65,7 @@ dev = [
 [tool.ruff]
 line-length = 120
 src = ["src"]
-target-version = "py38"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]  # Errors, pyflakes, warnings, isort

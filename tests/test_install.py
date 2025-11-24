@@ -6,7 +6,6 @@ import os
 import zipfile
 from email.message import Message
 from typing import Any
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -167,7 +166,9 @@ class TestDownloadBunBin:
         with pytest.raises(http.client.IncompleteRead):
             bunenv._download_bun_file("https://example.com/bun.zip", n_attempt=2)
 
-    def test_download_bun_bin_exception_handling(self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch, caplog: Any) -> None:
+    def test_download_bun_bin_exception_handling(
+        self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch, caplog: Any
+    ) -> None:
         """Test download_bun_bin handles exceptions and logs properly."""
 
         def failing_download(url: str, n_attempt: int = 3) -> io.BytesIO:
@@ -183,7 +184,9 @@ class TestDownloadBunBin:
         # Should have logged the newline restoration message
         assert "" in caplog.text or True  # Logs may be captured
 
-    def test_install_bun_exception_restores_newline(self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch, caplog: Any, mock_linux_x64: Any) -> None:
+    def test_install_bun_exception_restores_newline(
+        self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch, caplog: Any, mock_linux_x64: Any
+    ) -> None:
         """Test install_bun exception handler restores newline (lines 629-632)."""
 
         def failing_wrapped(env_dir: str, src_dir: str, args: Any) -> None:
@@ -370,7 +373,9 @@ class TestInstallPackages:
         # Should not raise
         bunenv.install_packages(str(tmp_path), args)
 
-    def test_install_packages_callit_error(self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch, mock_linux_x64: Any) -> None:
+    def test_install_packages_callit_error(
+        self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch, mock_linux_x64: Any
+    ) -> None:
         """Test that install_packages propagates errors from callit."""
         # Create fake bun binary
         bin_dir = tmp_path / "bin"
@@ -392,7 +397,9 @@ class TestInstallPackages:
         with pytest.raises(OSError, match="Installation failed"):
             bunenv.install_packages(str(tmp_path), args)
 
-    def test_install_packages_with_file(self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch, mock_linux_x64: Any) -> None:
+    def test_install_packages_with_file(
+        self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch, mock_linux_x64: Any
+    ) -> None:
         """Test installing packages from requirements file."""
         # Create fake bun binary
         bin_dir = tmp_path / "bin"

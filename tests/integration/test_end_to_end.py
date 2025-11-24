@@ -33,7 +33,9 @@ class TestMainFunction:
         # Version list is logged via logger.info
         assert "1.0.0" in caplog.text
 
-    def test_main_resolves_latest_version(self, monkeypatch: pytest.MonkeyPatch, mock_urlopen: Any, mock_linux_x64: Any) -> None:
+    def test_main_resolves_latest_version(
+        self, monkeypatch: pytest.MonkeyPatch, mock_urlopen: Any, mock_linux_x64: Any
+    ) -> None:
         """Test that 'latest' is resolved to actual version."""
         create_called = False
         resolved_version = None
@@ -147,7 +149,7 @@ class TestEndToEndWorkflows:
             requirements="",
             clean_src=False,
             prompt=None,
-            verbose=False
+            verbose=False,
         )
 
         bunenv.create_environment(str(env_dir), args)
@@ -186,7 +188,7 @@ class TestEndToEndWorkflows:
             requirements="",
             clean_src=False,
             prompt=None,
-            verbose=False
+            verbose=False,
         )
 
         bunenv.create_environment(str(env_dir), args)
@@ -254,7 +256,7 @@ class TestEndToEndWorkflows:
             requirements="",
             clean_src=False,
             prompt=None,
-            verbose=False
+            verbose=False,
         )
 
         bunenv.create_environment(sys.prefix, args)
@@ -288,16 +290,14 @@ class TestEndToEndWorkflows:
             requirements="",
             clean_src=True,
             prompt=None,
-            verbose=False
+            verbose=False,
         )
 
         bunenv.create_environment(str(env_dir), args)
 
         assert not (env_dir / "src").exists()
 
-    def test_multiple_environments(
-        self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch, mock_linux_x64: Any
-    ) -> None:
+    def test_multiple_environments(self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch, mock_linux_x64: Any) -> None:
         """Test creating multiple independent environments."""
         import os
 
@@ -387,7 +387,7 @@ class TestErrorHandling:
             requirements="/nonexistent/requirements.txt",
             clean_src=False,
             prompt=None,
-            verbose=False
+            verbose=False,
         )
 
         with pytest.raises(FileNotFoundError):
