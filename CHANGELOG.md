@@ -5,6 +5,16 @@ All notable changes to bunenv will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-10-11
+
+### Added
+- **Python 3.14 and 3.15 support** - Added classifiers and CI test matrix coverage
+
+### Fixed
+- **Type checker compliance** - Resolved `ty` diagnostics (invalid attribute annotation, `StreamHandler.emit` monkeypatch typing, deprecated `@contextmanager` return type, redundant casts in tests)
+
+---
+
 ## [1.0.0] - 2025-11-24
 
 ### Added
@@ -88,5 +98,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Activation scripts for multiple shells
 - Zero runtime dependencies
 
+[1.0.1]: https://github.com/JacobCoffee/bunenv/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/JacobCoffee/bunenv/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/JacobCoffee/bunenv/releases/tag/v0.1.0
