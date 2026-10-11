@@ -41,7 +41,7 @@ wheels = [
 
 [[package]]
 name = "bunenv"
-version = "0.1.0"
+version = "1.0.0"
 source = { editable = "." }
 
 [package.dev-dependencies]
