@@ -28,11 +28,11 @@ import sysconfig
 import urllib.request as urllib2
 import zipfile
 from configparser import ConfigParser
-from typing import Any, Callable, Iterator
+from typing import Any, Callable, Generator
 
 IncompleteRead = http.client.IncompleteRead
 
-bunenv_version: str = "1.0.0"
+bunenv_version: str = "1.0.1"
 
 join: Callable[..., str] = os.path.join
 abspath: Callable[[str], str] = os.path.abspath
@@ -103,7 +103,7 @@ class Config:
         print("    " + "\n    ".join(f"{k} = {v}" for k, v in sorted(vars(cls).items()) if not k.startswith("_")))
 
 
-Config._default: dict[str, Any] = {attr: val for attr, val in vars(Config).items() if not attr.startswith("_")}
+Config._default = {attr: val for attr, val in vars(Config).items() if not attr.startswith("_")}
 
 
 def clear_output(out: bytes) -> str:
@@ -152,7 +152,7 @@ def create_logger() -> logging.Logger:
         self.stream.write(fs.format(msg))
         self.flush()
 
-    logging.StreamHandler.emit = emit  # type: ignore[assignment]
+    logging.StreamHandler.emit = emit  # type: ignore
 
     # create console handler and set level to debug
     ch = logging.StreamHandler()
@@ -479,7 +479,7 @@ def get_bun_bin_url(version: str, variant: str = "", mirror: str | None = None) 
 
 
 @contextlib.contextmanager
-def zipfile_open(*args: Any, **kwargs: Any) -> Iterator[zipfile.ZipFile]:
+def zipfile_open(*args: Any, **kwargs: Any) -> Generator[zipfile.ZipFile]:
     """Context manager for zipfile."""
     zf = zipfile.ZipFile(*args, **kwargs)
     try:

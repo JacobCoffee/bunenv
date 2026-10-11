@@ -3,7 +3,7 @@
 import argparse
 import os
 import sys
-from typing import Any, cast
+from typing import Any
 
 import pytest
 
@@ -67,7 +67,7 @@ class TestMainEntryPoint:
         with pytest.raises(SystemExit) as exc_info:
             bunenv.main()
 
-        assert cast(SystemExit, exc_info.value).code == 0
+        assert exc_info.value.code == 0
 
     def test_main_block_execution(self, tmp_path: Any, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test that __main__ block executes main() when run directly (line 1206)."""
